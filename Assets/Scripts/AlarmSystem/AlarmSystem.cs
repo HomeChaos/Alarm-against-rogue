@@ -20,6 +20,9 @@ namespace Scripts.AlarmSystem
         [SerializeField] private Sprite _spriteLampOff;
         [SerializeField] private Sprite _spriteLampOn;
 
+        private const int _maxVolume = 1;
+        private const int _minVolume = 0;
+        
         private AudioSource _audioSource;
         private Coroutine _currentCoroutine;
         private float _currentVolume = 0;
@@ -55,7 +58,8 @@ namespace Scripts.AlarmSystem
             if (_currentCoroutine != null)
                 StopCoroutine(_currentCoroutine);
             
-            _currentCoroutine = StartCoroutine(TurnUpVolume());
+            _audioSource.Play();
+            _currentCoroutine = StartCoroutine(ChangeVolume(_maxVolume));
         }
 
         private void StopAlarm()
@@ -66,32 +70,23 @@ namespace Scripts.AlarmSystem
             if (_currentCoroutine != null)
                 StopCoroutine(_currentCoroutine);
             
-            _currentCoroutine = StartCoroutine(TurnDownVolume());
+            _currentCoroutine = StartCoroutine(ChangeVolume(_minVolume));
         }
 
-        private IEnumerator TurnUpVolume()
-        {
-            _audioSource.Play();
-            var waitForNextFrame = new WaitForNextFrameUnit();
-
-            while (_audioSource.volume != 1)
-            {
-                _audioSource.volume = Mathf.MoveTowards(_audioSource.volume, 1, _delayForAlarmSound * Time.deltaTime);
-                yield return waitForNextFrame;
-            }
-        }
-
-        private IEnumerator TurnDownVolume()
+        private IEnumerator ChangeVolume(int targetValue)
         {
             var waitForNextFrame = new WaitForNextFrameUnit();
 
-            while (_audioSource.volume != 0)
+            while (_audioSource.volume != targetValue)
             {
-                _audioSource.volume = Mathf.MoveTowards(_audioSource.volume, 0, _delayForAlarmSound * Time.deltaTime);
+                _audioSource.volume = Mathf.MoveTowards(_audioSource.volume, targetValue, _delayForAlarmSound * Time.deltaTime);
                 yield return waitForNextFrame;
             }
-            
-            _audioSource.Stop();
+
+            if (targetValue == _minVolume)
+            {
+                _audioSource.Stop();
+            }
         }
 
         private void OnDisable()
